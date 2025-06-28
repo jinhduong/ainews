@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/index.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "frontend/dist/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "^/api/(.*)",
+      "dest": "/src/index.ts"
+    },
+    {
+      "src": "^/console/(.*)",
+      "dest": "/src/index.ts"
+    },
+    {
+      "src": "^/(.*\\.(js|css|ico|png|jpg|jpeg|gif|svg))$",
+      "dest": "/frontend/dist/$1"
+    },
+    {
+      "src": "^/(.*)",
+      "dest": "/frontend/dist/index.html"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+} 
