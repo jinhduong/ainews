@@ -9,6 +9,7 @@ import logger from './utils/logger';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { newsApiCacheMiddleware, requestCache, cacheRoutes } from './cache';
+import { generateSitemap, getSitemapStats } from './services/sitemapService';
 
 dotenv.config();
 
@@ -172,6 +173,36 @@ app.use('/api/v1', dashboardRoutes);
 // Legacy route for console dashboard
 app.get('/console/dashboard', (req, res) => {
   res.redirect('/api/v1/dashboard/');
+});
+
+// SEO ENDPOINTS - Sitemap and Robots.txt
+// Generate and serve XML sitemap
+app.get('/sitemap.xml', (req, res) => {
+  try {
+    const baseUrl = req.protocol + '://' + req.get('host');
+    const sitemap = generateSitemap(baseUrl);
+    
+    res.set({
+      'Content-Type': 'application/xml',
+      'Cache-Control': 'public, max-age=3600' // Cache for 1 hour
+    });
+    
+    res.send(sitemap);
+  } catch (error) {
+    logger.error('Error generating sitemap:', error);
+    res.status(500).json({ message: 'Error generating sitemap' });
+  }
+});
+
+// Sitemap statistics endpoint
+app.get('/api/v1/sitemap/stats', (req, res) => {
+  try {
+    const stats = getSitemapStats();
+    res.json(stats);
+  } catch (error) {
+    logger.error('Error getting sitemap stats:', error);
+    res.status(500).json({ message: 'Error retrieving sitemap stats' });
+  }
 });
 
 // Serve audio files endpoint - generates audio on-demand and serves it

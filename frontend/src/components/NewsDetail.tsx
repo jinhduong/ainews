@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -15,7 +15,10 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useAudio } from '../contexts/AudioContext';
 import AudioPlayer from './AudioPlayer';
 import FloatingAudioPlayer from './FloatingAudioPlayer';
+import SEOHead from './SEOHead';
+import Breadcrumb from './Breadcrumb';
 import analyticsService from '../services/analyticsService';
+import { generateMetaDescription, extractArticleKeywords, generateSlug } from '../utils/seoHelpers';
 
 const NewsDetail: React.FC = () => {
   const navigate = useNavigate();
@@ -141,6 +144,16 @@ const NewsDetail: React.FC = () => {
   };
 
   return (
+    <>
+      <SEOHead 
+        title={`${article.title} | AI News`}
+        description={generateMetaDescription(article.summary)}
+        keywords={extractArticleKeywords(article)}
+        canonical={article.slug ? `/news/${article.slug}` : `/article/${article.id}`}
+        article={article}
+        type="article"
+        image={article.imageUrl}
+      />
     <div className={`min-h-screen transition-colors duration-300 ${
       isDarkMode 
         ? 'bg-gray-900 text-white' 
@@ -282,6 +295,8 @@ const NewsDetail: React.FC = () => {
 
       {/* Main Content */}
       <main ref={contentRef} className="max-w-4xl mx-auto px-6 md:px-8 py-12">
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb article={article} />
         {/* Article Summary */}
         <article className={`mb-12 p-8 md:p-12 transition-colors duration-300 ${
           isDarkMode 
@@ -305,8 +320,29 @@ const NewsDetail: React.FC = () => {
               })}
             </div>
             
-            {/* Subtle "read original" link */}
+            {/* Article Tags/Topics */}
             <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <h3 className={`text-sm font-semibold mb-3 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                Related Topics
+              </h3>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {['AI', 'Artificial Intelligence', 'Technology', 'Machine Learning', 'Innovation'].map((tag) => (
+                  <span
+                    key={tag}
+                    className={`px-3 py-1 text-xs font-medium rounded-full ${
+                      isDarkMode
+                        ? 'bg-blue-900/30 text-blue-300 border border-blue-800/50'
+                        : 'bg-blue-100 text-blue-800 border border-blue-200'
+                    }`}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              
+              {/* Read original link */}
               <button
                 onClick={handleReadOriginal}
                 className={`text-sm font-light tracking-wide transition-all duration-200 ${
@@ -351,11 +387,16 @@ const NewsDetail: React.FC = () => {
               ? 'bg-gray-800' 
               : 'bg-white'
           }`}>
-            <h2 className={`text-2xl font-bold mb-8 ${
+            <h2 className={`text-2xl font-bold mb-4 ${
               isDarkMode ? 'text-white' : 'text-gray-900'
             }`}>
-              Related Articles
+              Related AI News Articles
             </h2>
+            <p className={`text-sm mb-8 ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>
+              Discover more artificial intelligence updates and technology developments
+            </p>
             
             <div className="grid gap-6 md:grid-cols-3">
               {relatedArticles.map((relatedArticle) => (
@@ -367,7 +408,11 @@ const NewsDetail: React.FC = () => {
                       : 'bg-gray-50 hover:bg-gray-100'
                   }`}
                   onClick={() => {
-                    navigate(`/article/${relatedArticle.id}`, {
+                    // Use slug-based URL for better SEO
+                    const slug = relatedArticle.slug || generateSlug(relatedArticle.title);
+                    const urlPath = slug ? `/news/${slug}` : `/article/${relatedArticle.id}`;
+                    
+                    navigate(urlPath, {
                       state: { 
                         article: relatedArticle,
                         returnTo: { page: 1, category: returnTo?.category || 'artificial intelligence' }
@@ -425,6 +470,50 @@ const NewsDetail: React.FC = () => {
                 </article>
               ))}
             </div>
+            
+            {/* More AI News Link */}
+            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
+              <Link
+                to="/"
+                className={`inline-flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                  isDarkMode
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                } hover:shadow-lg`}
+              >
+                Explore More AI News & Updates
+              </Link>
+            </div>
+          </section>
+        )}
+        
+        {/* Call-to-Action for Homepage */}
+        {relatedArticles.length === 0 && (
+          <section className={`p-8 md:p-12 text-center transition-colors duration-300 ${
+            isDarkMode 
+              ? 'bg-gray-800' 
+              : 'bg-white'
+          }`}>
+            <h2 className={`text-2xl font-bold mb-4 ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>
+              Discover More AI News
+            </h2>
+            <p className={`text-lg mb-6 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-600'
+            }`}>
+              Stay updated with the latest artificial intelligence developments and technology insights
+            </p>
+            <Link
+              to="/"
+              className={`inline-flex items-center px-8 py-4 rounded-lg font-medium text-lg transition-all duration-200 ${
+                isDarkMode
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              } hover:shadow-lg`}
+            >
+              Browse All AI News Articles
+            </Link>
           </section>
         )}
       </main>
@@ -432,6 +521,7 @@ const NewsDetail: React.FC = () => {
       {/* Floating Audio Player */}
       <FloatingAudioPlayer />
     </div>
+    </>
   );
 };
 

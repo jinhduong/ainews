@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import NewsGrid from './NewsGrid';
+import SEOHead from './SEOHead';
 import analyticsService from '../services/analyticsService';
 
 const NewsHomePage: React.FC = () => {
@@ -38,11 +39,30 @@ const NewsHomePage: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      isDarkMode 
-        ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800' 
-        : 'bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100'
-    }`}>
+    <>
+      <SEOHead 
+        title="AI News - Latest Artificial Intelligence Updates & Developments"
+        description="Stay updated with the latest AI news, artificial intelligence developments, and cutting-edge technology insights. Get comprehensive AI-generated summaries from full article content - read smarter, not longer."
+        keywords={[
+          'AI news', 
+          'artificial intelligence', 
+          'latest AI developments', 
+          'AI updates', 
+          'machine learning news', 
+          'technology news', 
+          'AI research',
+          'AI summaries',
+          'artificial intelligence news',
+          'AI technology updates'
+        ]}
+        canonical="/"
+        type="website"
+      />
+      <div className={`min-h-screen transition-colors duration-300 ${
+        isDarkMode 
+          ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800' 
+          : 'bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100'
+      }`}>
       {/* Modern header with the new AI News logo */}
       <header className={`backdrop-blur-lg shadow-sm border-b transition-colors duration-300 ${
         isDarkMode 
@@ -70,7 +90,7 @@ const NewsHomePage: React.FC = () => {
             <div className="flex items-center gap-4 mb-4">
               <img 
                 src="/logo.png" 
-                alt="AI News Logo" 
+                alt="AI News - Latest artificial intelligence updates and technology news platform logo" 
                 className="w-16 h-16 object-contain drop-shadow-lg"
                 onError={(e) => {
                   // Fallback to text if logo doesn't load
@@ -143,7 +163,7 @@ const NewsHomePage: React.FC = () => {
             <div className="flex items-center justify-center gap-3 mb-4">
               <img 
                 src="/logo.png" 
-                alt="AI News Logo" 
+                alt="AI News platform - Artificial intelligence news and technology updates" 
                 className="w-8 h-8 object-contain"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
@@ -162,7 +182,8 @@ const NewsHomePage: React.FC = () => {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 };
 

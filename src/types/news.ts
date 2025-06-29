@@ -1,4 +1,3 @@
-// TypeScript interfaces matching the backend API structure
 export interface NewsItem {
   id: string;
   title: string;
@@ -7,7 +6,7 @@ export interface NewsItem {
   publishedAt: string;
   imageUrl?: string;
   audioPath?: string;
-  slug?: string; // SEO-friendly URL slug
+  slug?: string;
 }
 
 export interface PaginationInfo {
@@ -22,11 +21,4 @@ export interface PaginationInfo {
 export interface NewsResponse {
   articles: NewsItem[];
   pagination: PaginationInfo;
-}
-
-// Request parameters for the API call
-export interface NewsRequestParams {
-  category: string;
-  page?: number;
-  pageSize?: number;
 } 

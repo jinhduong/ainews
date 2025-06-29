@@ -1,0 +1,36 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /console/
+Disallow: /_next/
+Disallow: /dist/
+
+# Allow important files
+Allow: /favicon.ico
+Allow: /logo.png
+Allow: /sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://ainews.example.com/sitemap.xml
+
+# Special instructions for major search engines
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /console/
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /console/
+Crawl-delay: 1
+
+# Block access to sensitive paths
+User-agent: *
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /.well-known/ 

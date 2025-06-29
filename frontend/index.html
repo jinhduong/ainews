@@ -12,13 +12,24 @@
     <!-- Android Chrome icon -->
     <link rel="icon" type="image/png" sizes="192x192" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Inter font for modern typography -->
+    <!-- Critical performance optimizations -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//www.google-analytics.com">
+    
+    <!-- Inter font for modern typography with display=swap for better performance -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <title>AI News - Your AI-Powered News Assistant</title>
-    <meta name="description" content="Get comprehensive AI-generated summaries from full article content. Read smarter, not longer." />
-    <meta name="theme-color" content="#4f46e5" />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/logo.png" as="image" type="image/png">
+    
+    <!-- Performance and SEO meta tags -->
+    <meta name="format-detection" content="telephone=no">
+    <meta name="referrer" content="origin-when-cross-origin">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <!-- Dynamic meta tags will be handled by react-helmet-async -->
   </head>
   <body>
     <div id="root"></div>

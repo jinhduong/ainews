@@ -4,6 +4,7 @@ import { Calendar, Clock, Play } from 'lucide-react';
 import { NewsItem } from '../types/news';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAudio } from '../contexts/AudioContext';
+import { generateSlug } from '../utils/seoHelpers';
 
 interface NewsCardProps {
   article: NewsItem;
@@ -39,7 +40,11 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, currentPage = 1, category 
 
   // Handle click to navigate to detail page
   const handleClick = () => {
-    navigate(`/article/${article.id}`, {
+    // Use slug-based URL for better SEO, fallback to ID-based for compatibility
+    const slug = article.slug || generateSlug(article.title);
+    const urlPath = slug ? `/news/${slug}` : `/article/${article.id}`;
+    
+    navigate(urlPath, {
       state: { 
         article,
         returnTo: {
