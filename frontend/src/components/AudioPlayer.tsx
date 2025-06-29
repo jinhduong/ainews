@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 import analyticsService from '../services/analyticsService';
 
 interface AudioPlayerProps {
@@ -10,6 +11,7 @@ interface AudioPlayerProps {
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ articleId, title: _, audioPath, className = '' }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const { isDarkMode } = useTheme();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -118,7 +120,11 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ articleId, title: _, audioPat
   const progressPercentage = duration > 0 && isFinite(duration) ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className={`bg-gray-50 border border-gray-200 rounded-lg p-4 ${className}`}>
+    <div className={`rounded-lg p-4 border transition-colors duration-300 ${
+      isDarkMode 
+        ? 'bg-gray-750 border-gray-600' 
+        : 'bg-gray-50 border-gray-200'
+    } ${className}`}>
       {/* Audio element without src initially - src will be set when user clicks play */}
       <audio
         ref={audioRef}
@@ -186,7 +192,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ articleId, title: _, audioPat
 
         {/* Progress and Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
+          <div className={`flex items-center justify-between text-sm mb-1 ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-600'
+          }`}>
             <span className="truncate flex items-center">
               <svg className="w-4 h-4 text-blue-500 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 14l9-5-9-5-9 5 9 5z"/>
@@ -209,13 +217,13 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ articleId, title: _, audioPat
               onChange={handleSeek}
               disabled={!duration || !isFinite(duration) || !!error}
               className={`
-                w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer
+                w-full h-2 rounded-lg appearance-none cursor-pointer
                 ${!duration || !isFinite(duration) || error ? 'opacity-50 cursor-not-allowed' : ''}
               `}
               style={{
                 background: duration && isFinite(duration) && !error
-                  ? `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${progressPercentage}%, #E5E7EB ${progressPercentage}%, #E5E7EB 100%)`
-                  : '#E5E7EB'
+                  ? `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${progressPercentage}%, ${isDarkMode ? '#4B5563' : '#E5E7EB'} ${progressPercentage}%, ${isDarkMode ? '#4B5563' : '#E5E7EB'} 100%)`
+                  : isDarkMode ? '#4B5563' : '#E5E7EB'
               }}
             />
           </div>
@@ -223,7 +231,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ articleId, title: _, audioPat
       </div>
 
       {error && (
-        <div className="mt-2 text-xs text-red-600 flex items-center">
+        <div className={`mt-2 text-xs flex items-center ${
+          isDarkMode ? 'text-red-400' : 'text-red-600'
+        }`}>
           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
           </svg>

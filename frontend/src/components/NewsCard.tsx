@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ExternalLink, Calendar, ImageIcon, Clock } from 'lucide-react';
+import { Calendar, Clock, Play } from 'lucide-react';
 import { NewsItem } from '../types/news';
-import AudioPlayer from './AudioPlayer';
+import { useTheme } from '../contexts/ThemeContext';
+import { useAudio } from '../contexts/AudioContext';
 
 interface NewsCardProps {
   article: NewsItem;
@@ -12,6 +13,8 @@ interface NewsCardProps {
 
 const NewsCard: React.FC<NewsCardProps> = ({ article, currentPage = 1, category = 'artificial intelligence' }) => {
   const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
+  const { playTrack, currentTrack, isPlaying } = useAudio();
 
   // Format the published date for better readability
   const formatDate = (dateString: string): string => {
@@ -49,7 +52,11 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, currentPage = 1, category 
 
   return (
     <article 
-      className="group bg-white rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer transform hover:scale-[1.02] border border-gray-100 overflow-hidden backdrop-blur-sm"
+      className={`group relative overflow-hidden transition-all duration-300 cursor-pointer h-80 rounded-2xl ${
+        isDarkMode 
+          ? 'bg-gray-900 hover:bg-gray-800' 
+          : 'bg-white hover:bg-gray-50'
+      }`}
       onClick={handleClick}
       onKeyDown={(e) => {
         // Allow keyboard navigation (Enter and Space)
@@ -62,90 +69,91 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, currentPage = 1, category 
       role="button"
       aria-label={`Read summary: ${article.title}`}
     >
-      {/* Article Image with modern overlay */}
-      {article.imageUrl ? (
-        <div className="relative h-56 w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200">
-          <img
-            src={article.imageUrl}
-            alt={article.title}
-            className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
-            onError={(e) => {
-              // Hide image if it fails to load
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
+      {/* Subtle background image layer */}
+      {article.imageUrl && (
+        <>
+          {/* Background image with reduced blur, grayscale, and higher opacity */}
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-50 blur-[2px] scale-110 transition-all duration-300 group-hover:opacity-60 group-hover:scale-105"
+            style={{
+              backgroundImage: `url(${article.imageUrl}), linear-gradient(135deg, ${
+                isDarkMode 
+                  ? 'rgba(55, 65, 81, 0.1) 0%, rgba(75, 85, 99, 0.1) 100%'
+                  : 'rgba(243, 244, 246, 0.1) 0%, rgba(229, 231, 235, 0.1) 100%'
+              })`,
+              filter: 'blur(2px) grayscale(20%) saturate(1.1)',
             }}
+            aria-hidden="true"
           />
-          {/* Modern gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
           
-          {/* Floating reading time badge */}
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1 text-xs font-medium text-gray-700 shadow-lg">
-            <Clock className="w-3 h-3" />
-            <span>{estimateReadingTime(article.summary)} min</span>
-          </div>
-        </div>
-      ) : (
-        // Modern placeholder for articles without images
-        <div className="h-56 w-full bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 flex items-center justify-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-100/50 to-blue-100/50" />
-          <ImageIcon className="w-16 h-16 text-indigo-300 relative z-10" />
-          
-          {/* Reading time badge */}
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1 text-xs font-medium text-gray-700 shadow-lg">
-            <Clock className="w-3 h-3" />
-            <span>{estimateReadingTime(article.summary)} min</span>
-          </div>
-        </div>
+          {/* Semi-transparent overlay for text readability - made less opaque */}
+          <div
+            className={`absolute inset-0 transition-opacity duration-300 ${
+              isDarkMode
+                ? 'bg-gray-900/60 group-hover:bg-gray-900/50'
+                : 'bg-white/70 group-hover:bg-white/60'
+            }`}
+            aria-hidden="true"
+          />
+        </>
       )}
 
-      <div className="p-7">
-        {/* Article title with enhanced typography */}
-        <h2 className="text-xl font-bold text-gray-900 mb-5 line-clamp-2 leading-tight tracking-tight group-hover:text-indigo-700 transition-colors duration-300">
-          {article.title}
-        </h2>
-        
-        {/* Enhanced AI summary section with modern design */}
-        <div className="mb-6">
-          <div className="relative bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-5 border border-gray-100 shadow-sm">
-            {/* Subtle accent line */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-blue-500 to-cyan-500 rounded-t-xl" />
-            
-            <p className="text-gray-700 leading-relaxed line-clamp-3 font-medium text-sm">
-              {article.summary}
-            </p>
-          </div>
+      {/* Article content - positioned relative to appear above background */}
+      <div className="relative h-full flex flex-col justify-between p-6 sm:p-8">
+        {/* Top content: Headline with play button */}
+        <div className="flex items-start gap-4 mb-4">
+          <h2 className={`flex-1 text-xl sm:text-2xl font-bold leading-tight ${
+            isDarkMode 
+              ? 'text-white' 
+              : 'text-gray-900'
+          }`}>
+            {article.title}
+          </h2>
+          
+          {/* Minimal circular play button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              playTrack(article);
+            }}
+            className={`flex-shrink-0 w-10 h-10 rounded-full transition-all duration-200 hover:scale-105 flex items-center justify-center backdrop-blur-sm ${
+              currentTrack?.id === article.id && isPlaying
+                ? 'bg-blue-600 text-white shadow-lg' 
+                : isDarkMode
+                  ? 'bg-gray-800/90 text-gray-400 hover:bg-gray-700/90 hover:text-white'
+                  : 'bg-gray-100/90 text-gray-600 hover:bg-gray-200/90 hover:text-gray-900'
+            }`}
+            aria-label={`Play audio summary for ${article.title}`}
+          >
+            <Play className="w-4 h-4" />
+          </button>
         </div>
         
-        {/* Audio Player with enhanced styling */}
-        <div 
-          className="mb-6"
-          onClick={(e) => e.stopPropagation()} // Prevent navigation when interacting with audio player
-        >
-          <AudioPlayer 
-            articleId={article.id} 
-            title={article.title}
-            audioPath={article.audioPath}
-            className="shadow-sm border-0 bg-gradient-to-r from-gray-50 to-slate-50"
-          />
+        {/* Middle content: Summary */}
+        <div className="flex-1 mb-4">
+          <p className={`text-base leading-relaxed line-clamp-4 font-normal ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-600'
+          }`}>
+            {article.summary}
+          </p>
         </div>
         
-        {/* Modern footer with enhanced design */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <div className="flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1">
-              <Calendar className="w-3 h-3" aria-hidden="true" />
-              <time dateTime={article.publishedAt} className="font-medium">
-                {formatDate(article.publishedAt)}
-              </time>
-            </div>
+        {/* Bottom content: Metadata */}
+        <div className="flex items-center gap-6 mt-auto">
+          <div className={`flex items-center gap-2 text-sm ${
+            isDarkMode ? 'text-gray-500' : 'text-gray-400'
+          }`}>
+            <Calendar className="w-4 h-4" />
+            <time dateTime={article.publishedAt}>
+              {formatDate(article.publishedAt)}
+            </time>
           </div>
           
-          {/* Enhanced read summary button */}
-          <div className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700 transition-all duration-300 group-hover:translate-x-1">
-            <span className="font-semibold text-sm">Read Summary</span>
-            <div className="bg-indigo-100 group-hover:bg-indigo-200 rounded-full p-1 transition-colors duration-300">
-              <ExternalLink className="w-3 h-3" aria-hidden="true" />
-            </div>
+          <div className={`flex items-center gap-2 text-sm ${
+            isDarkMode ? 'text-gray-500' : 'text-gray-400'
+          }`}>
+            <Clock className="w-4 h-4" />
+            <span>{estimateReadingTime(article.summary)} min read</span>
           </div>
         </div>
       </div>

@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { Sun, Moon } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 import NewsGrid from './NewsGrid';
 import analyticsService from '../services/analyticsService';
 
 const NewsHomePage: React.FC = () => {
   const location = useLocation();
+  const { isDarkMode, toggleDarkMode } = useTheme();
   
   // Check if we're returning from a detail page with specific state
   const returnToPage = location.state?.returnToPage;
@@ -35,10 +38,33 @@ const NewsHomePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100">
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDarkMode 
+        ? 'bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800' 
+        : 'bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100'
+    }`}>
       {/* Modern header with the new AI News logo */}
-      <header className="bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-200/50">
+      <header className={`backdrop-blur-lg shadow-sm border-b transition-colors duration-300 ${
+        isDarkMode 
+          ? 'bg-gray-800/80 border-gray-700/50' 
+          : 'bg-white/80 border-gray-200/50'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Dark Mode Toggle - Top Right */}
+          <div className="absolute top-6 right-6">
+            <button
+              onClick={toggleDarkMode}
+              className={`p-3 rounded-xl transition-all duration-300 shadow-lg ${
+                isDarkMode 
+                  ? 'bg-yellow-500 text-gray-900 hover:bg-yellow-400' 
+                  : 'bg-gray-800 text-white hover:bg-gray-700'
+              }`}
+              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+          </div>
+          
           <div className="flex flex-col items-center justify-center">
             {/* New AI News logo */}
             <div className="flex items-center gap-4 mb-4">
@@ -59,13 +85,19 @@ const NewsHomePage: React.FC = () => {
                   }
                 }}
               />
-              <h1 className="text-4xl font-bold text-gray-900 tracking-tight">AI News</h1>
+              <h1 className={`text-4xl font-bold tracking-tight transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>AI News</h1>
             </div>
             
             {/* Enhanced subtitle highlighting AI summaries */}
-            <p className="text-gray-600 text-center max-w-2xl text-lg leading-relaxed">
+            <p className={`text-center max-w-2xl text-lg leading-relaxed transition-colors duration-300 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-600'
+            }`}>
               Get comprehensive AI-generated summaries from full article content. 
-              <span className="text-indigo-600 font-semibold"> Read smarter, not longer.</span>
+              <span className={`font-semibold ${
+                isDarkMode ? 'text-blue-400' : 'text-indigo-600'
+              }`}> Read smarter, not longer.</span>
             </p>
           </div>
           
@@ -79,11 +111,15 @@ const NewsHomePage: React.FC = () => {
         <div className="mb-10">
           <div className="flex items-center gap-4 mb-4">
             <div className="h-1 w-12 bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full"></div>
-            <h2 className="text-3xl font-bold text-gray-800">
+            <h2 className={`text-3xl font-bold transition-colors duration-300 ${
+              isDarkMode ? 'text-white' : 'text-gray-800'
+            }`}>
               Latest AI News
             </h2>
           </div>
-          <p className="text-gray-600 text-lg leading-relaxed">
+          <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-600'
+          }`}>
             Intelligent summaries of the latest artificial intelligence developments • Powered by AI analysis of full articles
           </p>
         </div>
@@ -97,7 +133,11 @@ const NewsHomePage: React.FC = () => {
       </main>
 
       {/* Enhanced footer */}
-      <footer className="bg-white/80 backdrop-blur-lg border-t border-gray-200/50 mt-20">
+      <footer className={`backdrop-blur-lg border-t mt-20 transition-colors duration-300 ${
+        isDarkMode 
+          ? 'bg-gray-800/80 border-gray-700/50' 
+          : 'bg-white/80 border-gray-200/50'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="text-center">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -110,9 +150,13 @@ const NewsHomePage: React.FC = () => {
                   target.style.display = 'none';
                 }}
               />
-              <span className="text-lg font-semibold text-gray-700">AI News</span>
+              <span className={`text-lg font-semibold transition-colors duration-300 ${
+                isDarkMode ? 'text-gray-200' : 'text-gray-700'
+              }`}>AI News</span>
             </div>
-            <p className="text-gray-500">
+            <p className={`transition-colors duration-300 ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-500'
+            }`}>
               &copy; 2025 AI News. Powered by artificial intelligence and built with love ❤️
             </p>
           </div>

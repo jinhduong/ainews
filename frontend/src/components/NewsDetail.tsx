@@ -1,13 +1,30 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Calendar, Clock, ImageIcon } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Calendar, 
+  Clock, 
+  Sun, 
+  Moon, 
+  Play,
+  Share2
+} from 'lucide-react';
 import { NewsItem } from '../types/news';
+import { fetchNews } from '../services/newsApi';
+import { useTheme } from '../contexts/ThemeContext';
+import { useAudio } from '../contexts/AudioContext';
 import AudioPlayer from './AudioPlayer';
+import FloatingAudioPlayer from './FloatingAudioPlayer';
 import analyticsService from '../services/analyticsService';
 
 const NewsDetail: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isDarkMode, toggleDarkMode } = useTheme();
+  const { isVisible: isAudioPlayerVisible, playTrack, currentTrack, isPlaying } = useAudio();
+  const [readingProgress, setReadingProgress] = useState(0);
+  const [relatedArticles, setRelatedArticles] = useState<NewsItem[]>([]);
+  const contentRef = useRef<HTMLDivElement>(null);
   
   // Get article data and return state from location state
   const article = location.state?.article as NewsItem;
@@ -21,19 +38,61 @@ const NewsDetail: React.FC = () => {
     return null;
   }
 
-  // Track page view on component mount
+  // Track page view and load related articles
   useEffect(() => {
     if (article) {
       analyticsService.trackPageView('detail');
+      loadRelatedArticles();
     }
   }, [article]);
 
-  // Format the published date for better readability
+  // Load related articles
+  const loadRelatedArticles = async () => {
+    try {
+      const newsData = await fetchNews({ 
+        category: returnTo?.category || 'artificial intelligence', 
+        page: 1, 
+        pageSize: 3 
+      });
+      
+      // Filter out the current article
+      const filtered = newsData.articles
+        .filter(item => item.id !== article.id)
+        .slice(0, 3);
+      
+      setRelatedArticles(filtered);
+    } catch (error) {
+      console.error('Error loading related articles:', error);
+    }
+  };
+
+  // Reading progress tracking
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!contentRef.current) return;
+      
+      const element = contentRef.current;
+      const elementTop = element.offsetTop;
+      const elementHeight = element.offsetHeight;
+      const windowHeight = window.innerHeight;
+      const scrollY = window.scrollY;
+      
+      const start = elementTop - windowHeight;
+      const end = elementTop + elementHeight;
+      const progress = Math.max(0, Math.min(1, (scrollY - start) / (end - start)));
+      
+      setReadingProgress(progress * 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Format date
   const formatDate = (dateString: string): string => {
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString('en-US', {
-        weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -43,7 +102,7 @@ const NewsDetail: React.FC = () => {
     }
   };
 
-  // Estimate reading time for the summary (average 200 words per minute)
+  // Estimate reading time
   const estimateReadingTime = (text: string): number => {
     const wordsPerMinute = 200;
     const wordCount = text.split(/\s+/).length;
@@ -55,7 +114,6 @@ const NewsDetail: React.FC = () => {
   };
 
   const handleGoBack = () => {
-    // If we have return state, navigate back to the specific page
     if (returnTo) {
       navigate('/', { 
         state: { 
@@ -65,182 +123,314 @@ const NewsDetail: React.FC = () => {
         replace: true 
       });
     } else {
-      // Fallback to browser history
       navigate(-1);
     }
   };
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      await navigator.share({
+        title: article.title,
+        text: article.summary,
+        url: window.location.href,
+      });
+    } else {
+      // Fallback to clipboard
+      await navigator.clipboard.writeText(window.location.href);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100">
-      {/* Modern header with enhanced design */}
-      <header className="bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-200/50 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={handleGoBack}
-              className="group flex items-center gap-3 text-gray-600 hover:text-indigo-700 transition-all duration-300 hover:translate-x-1"
-              aria-label="Go back"
-            >
-              <div className="bg-gray-100 group-hover:bg-indigo-100 rounded-full p-2 transition-colors duration-300">
-                <ArrowLeft className="w-5 h-5" />
-              </div>
-              <span className="font-semibold">Back to News</span>
-            </button>
+    <div className={`min-h-screen transition-colors duration-300 ${
+      isDarkMode 
+        ? 'bg-gray-900 text-white' 
+        : 'bg-gray-50 text-gray-900'
+    } ${
+      isAudioPlayerVisible ? 'pb-20 sm:pb-24' : ''
+    }`}>
+      {/* Reading Progress Bar */}
+      <div className="fixed top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700 z-50">
+        <div 
+          className="h-full bg-blue-500 transition-all duration-150 ease-out"
+          style={{ width: `${readingProgress}%` }}
+        />
+      </div>
+
+      {/* Hero Section with Subtle Background Image */}
+      <section className="relative min-h-[70vh] overflow-hidden">
+        {/* Background Image Layer */}
+        {article.imageUrl && (
+          <>
+            {/* Background image with high visibility */}
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-60 scale-105"
+              style={{
+                backgroundImage: `url(${article.imageUrl})`,
+                filter: 'blur(2px) grayscale(20%) saturate(1.1)',
+              }}
+              aria-hidden="true"
+            />
             
-            {/* AI News logo in header */}
-            <div className="flex items-center gap-3">
-              <img 
-                src="/logo.png" 
-                alt="AI News Logo" 
-                className="w-8 h-8 object-contain"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                }}
-              />
-              <span className="text-lg font-semibold text-gray-800">AI News</span>
-            </div>
+            {/* Semi-transparent overlay for text readability */}
+            <div
+              className={`absolute inset-0 ${
+                isDarkMode
+                  ? 'bg-gray-900/65'
+                  : 'bg-white/70'
+              }`}
+              aria-hidden="true"
+            />
+          </>
+        )}
+
+        {/* Header Navigation */}
+        <div className="relative z-10 flex items-center justify-between p-6 md:p-8">
+          <button
+            onClick={handleGoBack}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors duration-200 ${
+              isDarkMode 
+                ? 'text-gray-300 hover:text-white hover:bg-gray-800' 
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="font-medium">Back</span>
+          </button>
+
+          <div className="flex items-center gap-3">
+            {/* Audio Play Button */}
+            <button
+              onClick={() => playTrack(article)}
+              className={`p-3 rounded-full transition-all duration-200 ${
+                currentTrack?.id === article.id && isPlaying
+                  ? 'bg-blue-600 text-white' 
+                  : isDarkMode
+                    ? 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+              }`}
+              aria-label="Play audio summary"
+            >
+              <Play className="w-5 h-5" />
+            </button>
+
+            {/* Share Button */}
+            <button
+              onClick={handleShare}
+              className={`p-3 rounded-full transition-all duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+              }`}
+              aria-label="Share article"
+            >
+              <Share2 className="w-5 h-5" />
+            </button>
+
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className={`p-3 rounded-full transition-all duration-200 ${
+                isDarkMode 
+                  ? 'bg-yellow-500 text-gray-900 hover:bg-yellow-400' 
+                  : 'bg-gray-800 text-white hover:bg-gray-700'
+              }`}
+              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
           </div>
         </div>
-      </header>
 
-      {/* Main content with enhanced layout */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <article className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-200/50">
-          {/* Enhanced Article Image */}
-          {article.imageUrl ? (
-            <div className="relative h-72 md:h-96 w-full overflow-hidden">
-              <img
-                src={article.imageUrl}
-                alt={article.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Show modern placeholder if image fails to load
-                  const target = e.target as HTMLImageElement;
-                  const parent = target.parentElement;
-                  if (parent) {
-                    parent.innerHTML = `
-                      <div class="h-full w-full bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 flex items-center justify-center relative overflow-hidden">
-                        <div class="absolute inset-0 bg-gradient-to-br from-indigo-100/50 to-blue-100/50"></div>
-                        <svg class="w-20 h-20 text-indigo-300 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                      </div>
-                    `;
-                  }
-                }}
-              />
-              {/* Enhanced gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
-              
-              {/* Floating metadata badges */}
-              <div className="absolute bottom-6 left-6 flex items-center gap-3">
-                <div className="bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 text-sm font-medium text-gray-700 shadow-lg">
-                  <Clock className="w-4 h-4" />
-                  <span>{estimateReadingTime(article.summary)} min read</span>
-                </div>
+        {/* Hero Content */}
+        <div className="relative z-10 flex items-center min-h-[50vh] px-6 md:px-8">
+          <div className="max-w-4xl mx-auto w-full">
+            {/* Metadata */}
+            <div className="flex items-center gap-6 mb-6">
+              <div className={`flex items-center gap-2 text-sm ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                <Calendar className="w-4 h-4" />
+                <time dateTime={article.publishedAt}>
+                  {formatDate(article.publishedAt)}
+                </time>
               </div>
-            </div>
-          ) : (
-            // Modern placeholder for articles without images
-            <div className="h-72 md:h-96 w-full bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-100/50 to-blue-100/50" />
-              <ImageIcon className="w-20 h-20 text-indigo-300 relative z-10" />
               
-              {/* Reading time badge */}
-              <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 flex items-center gap-2 text-sm font-medium text-gray-700 shadow-lg">
+              <div className={`flex items-center gap-2 text-sm ${
+                isDarkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
                 <Clock className="w-4 h-4" />
                 <span>{estimateReadingTime(article.summary)} min read</span>
               </div>
             </div>
-          )}
 
-          {/* Enhanced article content */}
-          <div className="p-8 sm:p-12">
-            {/* Enhanced title with modern typography */}
-            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 leading-tight mb-8 tracking-tight">
+            {/* Title */}
+            <h1 className={`text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-8 ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>
               {article.title}
             </h1>
 
-            {/* Modern article metadata */}
-            <div className="flex items-center justify-between text-gray-500 text-sm mb-10 pb-8 border-b border-gray-200">
-              <div className="flex items-center gap-2">
-                <div className="bg-gradient-to-r from-indigo-100 to-blue-100 rounded-full px-4 py-2 flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-indigo-600" />
-                  <time dateTime={article.publishedAt} className="font-semibold text-gray-700">
-                    {formatDate(article.publishedAt)}
-                  </time>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="bg-gradient-to-r from-cyan-100 to-teal-100 rounded-full px-4 py-2 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-cyan-600" />
-                  <span className="font-semibold text-gray-700">{estimateReadingTime(article.summary)} min read</span>
-                </div>
-              </div>
-            </div>
+            {/* Summary Preview */}
+            <p className={`text-xl md:text-2xl leading-relaxed max-w-3xl ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-600'
+            }`}>
+              {article.summary.split('.')[0]}.
+            </p>
+          </div>
+        </div>
+      </section>
 
-            {/* Enhanced summary content */}
-            <div className="prose prose-lg max-w-none">
-              <div className="relative bg-gradient-to-br from-slate-50 to-gray-50 rounded-2xl p-8 border border-gray-200/50 shadow-sm mb-10">
-                {/* Modern accent line */}
-                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-blue-500 to-cyan-500 rounded-t-2xl" />
+      {/* Main Content */}
+      <main ref={contentRef} className="max-w-4xl mx-auto px-6 md:px-8 py-12">
+        {/* Article Summary */}
+        <article className={`mb-12 p-8 md:p-12 transition-colors duration-300 ${
+          isDarkMode 
+            ? 'bg-gray-800' 
+            : 'bg-white'
+        }`}>
+          <div className="prose prose-lg md:prose-xl max-w-none">
+            <div className="text-lg md:text-xl leading-relaxed space-y-6">
+              {article.summary.split(/\.\s+/).map((sentence, index, array) => {
+                const processedSentence = index < array.length - 1 
+                  ? sentence + '.'
+                  : sentence;
                 
-                <div className="text-gray-700 leading-relaxed space-y-6">
-                  {/* Split summary into paragraphs for better readability */}
-                  {article.summary.split(/\.\s+/).map((sentence, index, array) => {
-                    // Add period back except for the last sentence
-                    const processedSentence = index < array.length - 1 
-                      ? sentence + '.'
-                      : sentence;
-                    
-                    return (
-                      <p key={index} className="text-lg leading-relaxed">
-                        {processedSentence}
-                      </p>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Enhanced Audio Player */}
-              <div className="mb-12">
-                <AudioPlayer 
-                  articleId={article.id} 
-                  title={article.title}
-                  audioPath={article.audioPath}
-                  className="shadow-lg border-0 bg-gradient-to-r from-gray-50 to-slate-50 rounded-2xl"
-                />
-              </div>
-
-              {/* Modern call-to-action section */}
-              <div className="bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 rounded-2xl p-8 border border-indigo-200/50 shadow-sm">
-                <div className="flex items-start gap-4">
-                  <div className="bg-gradient-to-r from-indigo-500 to-blue-500 rounded-full p-3 flex-shrink-0">
-                    <ExternalLink className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">
-                      Want to dive deeper?
-                    </h3>
-                    <p className="text-gray-600 mb-6 leading-relaxed">
-                      This AI-generated summary captures the key points, but the full article contains additional details, 
-                      quotes, and context that might interest you.
-                    </p>
-                    <button
-                      onClick={handleReadOriginal}
-                      className="group inline-flex items-center gap-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-                    >
-                      <span>Read Full Original Article</span>
-                      <ExternalLink className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+                return (
+                  <p key={index} className={`leading-relaxed ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                  }`}>
+                    {processedSentence}
+                  </p>
+                );
+              })}
+            </div>
+            
+            {/* Subtle "read original" link */}
+            <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={handleReadOriginal}
+                className={`text-sm font-light tracking-wide transition-all duration-200 ${
+                  isDarkMode 
+                    ? 'text-gray-400 hover:text-gray-300 hover:underline decoration-gray-500' 
+                    : 'text-gray-500 hover:text-gray-700 hover:underline decoration-gray-400'
+                } hover:underline-offset-4`}
+              >
+                read original article
+              </button>
             </div>
           </div>
         </article>
+
+        {/* Audio Player Section */}
+        {article.audioPath && (
+          <section className={`mb-12 p-8 md:p-12 transition-colors duration-300 ${
+            isDarkMode 
+              ? 'bg-gray-800' 
+              : 'bg-white'
+          }`}>
+            <h2 className={`text-2xl font-bold mb-6 ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>
+              Listen to Summary
+            </h2>
+            <AudioPlayer 
+              articleId={article.id} 
+              title={article.title}
+              audioPath={article.audioPath}
+              className="border-0 shadow-none bg-transparent"
+            />
+          </section>
+        )}
+
+
+
+        {/* Related Articles */}
+        {relatedArticles.length > 0 && (
+          <section className={`p-8 md:p-12 transition-colors duration-300 ${
+            isDarkMode 
+              ? 'bg-gray-800' 
+              : 'bg-white'
+          }`}>
+            <h2 className={`text-2xl font-bold mb-8 ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>
+              Related Articles
+            </h2>
+            
+            <div className="grid gap-6 md:grid-cols-3">
+              {relatedArticles.map((relatedArticle) => (
+                <article 
+                  key={relatedArticle.id}
+                  className={`group relative overflow-hidden h-80 cursor-pointer transition-all duration-300 hover:scale-105 ${
+                    isDarkMode 
+                      ? 'bg-gray-900 hover:bg-gray-700' 
+                      : 'bg-gray-50 hover:bg-gray-100'
+                  }`}
+                  onClick={() => {
+                    navigate(`/article/${relatedArticle.id}`, {
+                      state: { 
+                        article: relatedArticle,
+                        returnTo: { page: 1, category: returnTo?.category || 'artificial intelligence' }
+                      }
+                    });
+                  }}
+                >
+                  {/* Background Image */}
+                  {relatedArticle.imageUrl && (
+                    <>
+                      <div
+                        className="absolute inset-0 bg-cover bg-center opacity-25 blur-sm scale-110 transition-all duration-300 group-hover:opacity-30 group-hover:scale-105"
+                        style={{
+                          backgroundImage: `url(${relatedArticle.imageUrl})`,
+                          filter: 'blur(5px) grayscale(50%) saturate(0.8)',
+                        }}
+                        aria-hidden="true"
+                      />
+                      
+                      <div
+                        className={`absolute inset-0 transition-opacity duration-300 ${
+                          isDarkMode
+                            ? 'bg-gray-900/80 group-hover:bg-gray-900/75'
+                            : 'bg-white/85 group-hover:bg-white/80'
+                        }`}
+                        aria-hidden="true"
+                      />
+                    </>
+                  )}
+
+                  {/* Content */}
+                  <div className="relative h-full flex flex-col justify-between p-6">
+                    <div>
+                      <h3 className={`text-lg font-bold leading-tight mb-3 line-clamp-3 ${
+                        isDarkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        {relatedArticle.title}
+                      </h3>
+                      <p className={`text-sm leading-relaxed line-clamp-3 ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                      }`}>
+                        {relatedArticle.summary}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 mt-4">
+                      <div className={`flex items-center gap-2 text-xs ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
+                        <Clock className="w-3 h-3" />
+                        <span>{estimateReadingTime(relatedArticle.summary)} min read</span>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
       </main>
+      
+      {/* Floating Audio Player */}
+      <FloatingAudioPlayer />
     </div>
   );
 };

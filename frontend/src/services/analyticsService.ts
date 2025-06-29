@@ -1,4 +1,14 @@
-const API_BASE_URL = 'http://localhost:3000/api/v1';
+// API configuration - environment-based URL selection
+const getApiBaseUrl = () => {
+  // Check if we're in development mode (localhost)
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:3000/api/v1';
+  }
+  // Production environment (Vercel deployment)
+  return 'https://ainews-one.vercel.app/api/v1';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface AudioSession {
   articleId: string;

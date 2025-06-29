@@ -13,6 +13,7 @@ interface NewsGridProps {
 }
 
 const NewsGrid: React.FC<NewsGridProps> = ({ category, page, onPageChange }) => {
+  
   // Use TanStack Query for efficient data fetching with caching
   const {
     data: newsData,
@@ -60,7 +61,7 @@ const NewsGrid: React.FC<NewsGridProps> = ({ category, page, onPageChange }) => 
 
   return (
     <div className="w-full">
-      {/* Articles grid with responsive layout */}
+      {/* Articles in modern grid layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {articles.map((article) => (
           <NewsCard 

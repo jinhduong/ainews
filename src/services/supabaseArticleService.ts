@@ -100,28 +100,7 @@ export async function saveArticlesToSupabase(
   }
 }
 
-/**
- * Get existing articles for duplicate checking
- */
-export async function getExistingArticleUrls(category: string): Promise<Set<string>> {
-  try {
-    const { data, error } = await supabase
-      .from(TABLES.ARTICLES)
-      .select('url')
-      .eq('category', category);
 
-    if (error) {
-      logger.error('❌ Error fetching existing article URLs:', error);
-      return new Set();
-    }
-
-    return new Set(data?.map(item => item.url) || []);
-
-  } catch (error) {
-    logger.error('❌ Exception fetching existing article URLs:', error);
-    return new Set();
-  }
-}
 
 /**
  * Get articles with pagination
@@ -201,41 +180,7 @@ export async function getArticlesPaginated(
   }
 }
 
-/**
- * Clean up old articles (older than specified days)
- */
-export async function cleanupOldArticles(daysOld: number = 7): Promise<{ success: boolean; deletedCount: number; error?: string }> {
-  try {
-    logger.info(`🗑️ Cleaning up articles older than ${daysOld} days`);
 
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
-
-    const { data, error } = await supabase
-      .from(TABLES.ARTICLES)
-      .delete()
-      .lt('collected_at', cutoffDate.toISOString())
-      .select();
-
-    if (error) {
-      logger.error('❌ Error cleaning up old articles:', error);
-      return { success: false, deletedCount: 0, error: error.message };
-    }
-
-    const deletedCount = data?.length || 0;
-    logger.info(`✅ Cleaned up ${deletedCount} old articles`);
-
-    return { success: true, deletedCount };
-
-  } catch (error) {
-    logger.error('❌ Exception cleaning up old articles:', error);
-    return { 
-      success: false, 
-      deletedCount: 0, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
 
 /**
  * Get storage statistics

@@ -84,7 +84,12 @@ export async function generateAudioOnDemand(
       return audioFilePath;
     }
 
-    logger.info(`🎤 Generating audio on-demand for article: ${article.title.substring(0, 50)}...`);
+    logger.info(
+      `🎤 Generating audio on-demand for article: ${article.title.substring(
+        0,
+        50
+      )}...`
+    );
 
     // Prepare content for speech (combine title and summary)
     const fullContent = `${article.title}. ${article.summary}`;
@@ -101,9 +106,6 @@ export async function generateAudioOnDemand(
 
     // Convert the response to a buffer
     const buffer = Buffer.from(await mp3.arrayBuffer());
-
-    // Always save locally first (backup)
-    fs.writeFileSync(audioFilePath, buffer);
 
     let finalAudioPath = audioFilePath;
 
@@ -123,13 +125,22 @@ export async function generateAudioOnDemand(
 
           // Update the article in Supabase with the audio path
           try {
-            const { updateArticleAudioPath } = await import("./supabaseArticleService");
-            const updateResult = await updateArticleAudioPath(article.id, supabaseResult.audioPath);
-            
+            const { updateArticleAudioPath } = await import(
+              "./supabaseArticleService"
+            );
+            const updateResult = await updateArticleAudioPath(
+              article.id,
+              supabaseResult.audioPath
+            );
+
             if (updateResult.success) {
-              logger.info(`✅ Updated article ${article.id} with audio path in database`);
+              logger.info(
+                `✅ Updated article ${article.id} with audio path in database`
+              );
             } else {
-              logger.warn(`⚠️ Failed to update article ${article.id} audio path: ${updateResult.error}`);
+              logger.warn(
+                `⚠️ Failed to update article ${article.id} audio path: ${updateResult.error}`
+              );
             }
           } catch (updateError) {
             logger.error(`❌ Error updating article audio path:`, updateError);
@@ -151,15 +162,24 @@ export async function generateAudioOnDemand(
       // Local mode: Update local storage with audio path
       try {
         const { updateArticleAudioPathLocal } = await import("./newsStorage");
-        const updateResult = updateArticleAudioPathLocal(article.id, audioFilePath);
-        
+        fs.writeFileSync(audioFilePath, buffer);
+        const updateResult = updateArticleAudioPathLocal(
+          article.id,
+          audioFilePath
+        );
+
         if (updateResult) {
           logger.info(`✅ Updated local article ${article.id} with audio path`);
         } else {
-          logger.warn(`⚠️ Could not update local article ${article.id} with audio path`);
+          logger.warn(
+            `⚠️ Could not update local article ${article.id} with audio path`
+          );
         }
       } catch (updateError) {
-        logger.error(`❌ Error updating local article audio path:`, updateError);
+        logger.error(
+          `❌ Error updating local article audio path:`,
+          updateError
+        );
       }
     }
 
@@ -173,9 +193,11 @@ export async function generateAudioOnDemand(
     statsService.recordOpenAiAudioCall(true, estimatedDurationMinutes);
 
     return finalAudioPath;
-
   } catch (error) {
-    logger.error(`❌ Error generating audio on-demand for article ${article.id}:`, error);
+    logger.error(
+      `❌ Error generating audio on-demand for article ${article.id}:`,
+      error
+    );
     statsService.recordOpenAiAudioCall(false, 0);
     return null;
   }
@@ -287,7 +309,7 @@ export async function generateSpeechFromText(
     const estimatedDurationMinutes = speechText.length / 5 / 150;
     statsService.recordOpenAiAudioCall(true, estimatedDurationMinutes);
 
-    return `${articleId}.mp3`
+    return `${articleId}.mp3`;
   } catch (error) {
     logger.error(`❌ Error generating speech for article ${articleId}:`, error);
     statsService.recordOpenAiAudioCall(false, 0);

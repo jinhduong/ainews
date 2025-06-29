@@ -35,23 +35,4 @@ export const devConfig = getDevConfig();
 export const isLocalMode = () => devConfig.mode === 'local';
 export const isSupabaseMode = () => devConfig.mode === 'supabase';
 
-// Development utilities
-export function switchToLocalMode(): void {
-  process.env.USE_LOCAL_DB = 'true';
-  logger.info('🔄 Switched to LOCAL development mode');
-  logger.info('💡 Restart server to apply changes');
-}
-
-export function getConfigSummary(): string {
-  const config = getDevConfig();
-  return `
-🔧 Development Configuration:
-   Mode: ${config.mode.toUpperCase()}
-   Local Files: ${config.useLocalFiles ? '✅' : '❌'}
-   Supabase: ${config.useSupabase ? '✅' : '❌'}
-   Environment: ${process.env.NODE_ENV || 'production'}
-   
-💡 To use local mode: export USE_LOCAL_DB=true
-💡 To use Supabase: unset USE_LOCAL_DB (or set to false)
-  `;
-} 
+ 

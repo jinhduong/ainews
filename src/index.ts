@@ -8,6 +8,7 @@ import statsService from './services/statsService';
 import logger from './utils/logger';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import { newsApiCacheMiddleware, requestCache, cacheRoutes } from './cache';
 
 dotenv.config();
 
@@ -41,7 +42,7 @@ app.get('/', (req, res) => {
 });
 
 // News API Endpoint with category and pagination in request body
-app.post('/api/v1/news', authenticateApiKey, async (req, res) => {
+app.post('/api/v1/news', authenticateApiKey, newsApiCacheMiddleware, async (req, res) => {
   const { category, page, pageSize } = req.body;
   
   // Validate that category is provided
@@ -158,6 +159,10 @@ app.get('/api/v1/audio/stats', (req, res) => {
     res.status(500).json({ message: 'Error retrieving audio stats' });
   }
 });
+
+// 🚀 CACHE MANAGEMENT ENDPOINTS
+// Mount cache routes
+app.use('/api/v1/cache', cacheRoutes);
 
 // 📊 DASHBOARD & ANALYTICS ENDPOINTS
 // Import and mount the organized dashboard routes

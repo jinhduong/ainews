@@ -44,7 +44,6 @@ function convertStoredToNewsItem(storedItem: StoredNewsItem): NewsItem {
 
 /**
  * Gets news from stored cache (collected by cron jobs)
- * This replaces the previous getNewsFromOpenAI function that made live API calls
  */
 export function getNewsFromCache(params: NewsRequestParams): PaginatedNewsResponse {
   const { category, page = 1, pageSize = 5 } = params;
@@ -88,6 +87,3 @@ export function getNewsFromCache(params: NewsRequestParams): PaginatedNewsRespon
     };
   }
 }
-
-// Keep the old function name for backward compatibility, but make it use cache
-export const getNewsFromOpenAI = getNewsFromCache;

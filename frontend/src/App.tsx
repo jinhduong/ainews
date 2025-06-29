@@ -1,6 +1,10 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { AudioProvider } from './contexts/AudioContext';
+import FloatingAudioPlayer from './components/FloatingAudioPlayer';
 import NewsHomePage from './components/NewsHomePage';
 import NewsDetail from './components/NewsDetail';
 
@@ -17,14 +21,20 @@ const queryClient = new QueryClient({
 
 const App: React.FC = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <Routes>
-          <Route path="/" element={<NewsHomePage />} />
-          <Route path="/article/:id" element={<NewsDetail />} />
-        </Routes>
-      </Router>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <AudioProvider>
+        <QueryClientProvider client={queryClient}>
+          <Router>
+            <Routes>
+              <Route path="/" element={<NewsHomePage />} />
+              <Route path="/article/:id" element={<NewsDetail />} />
+            </Routes>
+            <Analytics />
+            <FloatingAudioPlayer />
+          </Router>
+        </QueryClientProvider>
+      </AudioProvider>
+    </ThemeProvider>
   );
 };
 
